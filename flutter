@@ -1,0 +1,268 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatefulWidget {
+  const MyApp({Key? key}) : super(key: key);
+
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  var url1 = "https://mdash.net/api/v2/devices/";
+  var url2 = "/rpc/Sys.GetInfo?access_token=5yvbTOSq90iYY992mIg3wOhA";
+  var url3 = "https://mdash.net/api/v2/devices/";
+  var url5 = "/rpc/";
+  var url6 = "?access_token=5yvbTOSq90iYY992mIg3wOhA";
+  var url4 = "/rpc/RPC.List?access_token=5yvbTOSq90iYY992mIg3wOhA";
+  var newdata;
+  var newdata1;
+  var devicecontroller = TextEditingController();
+  var funccontroller = TextEditingController();
+  var newdevicedata = "";
+  var selected = null;
+  var showdata1 = {};
+  var showdata3;
+  var mydata1;
+  var funcdata;
+  var statusdata;
+
+  get newurl => "$url1$newdevicedata$url2";
+  get newurl2 => "$url3$newdevicedata$url4";
+  final GlobalKey<ScaffoldState> skey = new GlobalKey<ScaffoldState>();
+
+  String getpretty(jsonobj) {
+    var encoder1 = new JsonEncoder.withIndent("   ");
+    return encoder1.convert(jsonobj);
+  }
+
+  void getdata(String deviceId) async {
+    try {
+      final statusurl = url1 + deviceId + url2;
+      final response1 = await http.post(Uri.parse(statusurl));
+
+      final jsondata = json.decode(response1.body) as String;
+
+      final mydata = json.encode(jsondata);
+
+      setState(() {
+        newdata = jsondata;
+        mydata1 = mydata;
+        showdata1 = showdata;
+        showdata3 = showdata2;
+      });
+    } catch (e) {}
+  }
+
+  /* getdata(String deviceId) async {
+    try {
+      // final deviceId = 'device421';
+      final urlStr = url1 + deviceId + url2;
+
+      var client = http.Client();
+      var response1 = await client.get(Uri.parse(urlStr));
+
+      if (response1 != null) {
+        var jsondata = jsonDecode(response1.body);
+        if (response1.statusCode == 200) {
+          return jsondata
+              .toString(); //{"siteId": data["siteId"], "name": data["name"]};
+          // data["siteId"];
+          // data["name"];
+        }
+      }
+    } catch (e) {
+      throw Exception(e);
+    }
+  }*/
+
+  get showdata => newdata["error"];
+  get showdata2 => showdata1["message"];
+  void getlist() async {
+    try {
+      final response2 = await http.get(Uri.parse(newurl2));
+      final jsonlist = json.decode(response2.body) as List;
+      setState(() {
+        newdata1 = jsonlist;
+      });
+    } catch (e) {}
+  }
+
+  Future<String?> setDevicePoints(String deviceId) async {
+    try {
+      // final deviceId = 'device421';
+
+      final urlStr = url3 + deviceId + url5 + selected + url6;
+
+      /* Map bodyData = AquaUser.getInstance().getBotJson();
+      if (bodyData == null) return null;*/
+
+      var client = http.Client();
+
+      Map<String, String> headers = {
+        'Content-Type': 'application/json; charset=UTF-8',
+      };
+      var response = await client.post(Uri.parse(urlStr),
+          body: jsonEncode(funcdata), headers: headers);
+
+      if (response != null) {
+        var data = jsonDecode(response.body);
+        if (data["statusCode"] == 200) {
+          return data.toString();
+
+          //{"siteId": data["siteId"], "name": data["name"]};
+          // data["siteId"];
+          // data["name"];
+        }
+      }
+      return null;
+    } catch (e) {
+      throw Exception(e);
+    }
+  }
+
+  get mydata4 => mydata1.replaceAll(",", ",\n");
+  @override
+  void initState() {
+    super.initState();
+    getdata(newdevicedata);
+
+    getlist();
+    showdata;
+    showdata2;
+    getpretty(mydata1);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: "Flutter",
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+          key: skey,
+          appBar: AppBar(
+            backgroundColor: Colors.orangeAccent,
+            title: Text("Next Aqua"),
+            centerTitle: true,
+          ),
+          body: Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                margin: EdgeInsets.only(top: 20, left: 20),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 200,
+                          child: TextField(
+                            controller: devicecontroller,
+                            decoration: InputDecoration(
+                                labelText: "Device",
+                                hintText: "Enter Device Name"),
+                          ),
+                        ),
+                        ElevatedButton(
+                            style:
+                                ElevatedButton.styleFrom(primary: Colors.green),
+                            onPressed: () {
+                              setState(() {
+                                newdevicedata = devicecontroller.text;
+                                getdata(newdevicedata);
+                                //if (newdata.containsKey('error'))
+                                //showSnackbar();
+                              });
+                            },
+                            child: Text("Check Status")),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        DropdownButton(
+                          value: selected,
+                          icon: Icon(Icons.arrow_drop_down),
+                          hint: Text("Select Item"),
+                          items: newdata1.map((item) {
+                            return DropdownMenuItem(
+                              child: Text(item),
+                              value: item,
+                            );
+                          }).toList(),
+                          onChanged: (vr) {
+                            setState(() {
+                              selected = vr.toString();
+                            });
+                          },
+                        ),
+                        ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                                primary: Colors.purple),
+                            onPressed: () {
+                              setState(() {
+                                newdevicedata = devicecontroller.text;
+                                getlist();
+                              });
+                            },
+                            child: Text("RPC List")),
+                      ],
+                    ),
+                    Container(
+                      margin: EdgeInsets.only(top: 10, right: 10, bottom: 10),
+                      height: 200,
+                      width: 300,
+                      child: TextField(
+                        maxLines: 30,
+                        controller: funccontroller,
+                        decoration: InputDecoration(
+                            labelText: "Function",
+                            hintText: "Enter Function",
+                            filled: true),
+                      ),
+                    ),
+                    ElevatedButton(
+                        style: ElevatedButton.styleFrom(primary: Colors.pink),
+                        onPressed: () {
+                          setState(() {
+                            funcdata = funccontroller.text;
+                            setDevicePoints(newdevicedata);
+                          });
+                        },
+                        child: Text("Submit"))
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Container(
+                  margin: EdgeInsets.only(
+                    left: 100,
+                    top: 20,
+                  ),
+                  child:
+                      Text("\n\n\nResponse:\n", style: TextStyle(fontSize: 20)),
+                ),
+              ),
+            ],
+          )),
+    );
+  }
+
+  void showSnackbar() {
+    final snackbar = SnackBar(
+        shape: RoundedRectangleBorder(),
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.only(right: 400, left: 400),
+        content: Text("$showdata3"));
+    skey.currentState!.showSnackBar(snackbar);
+  }
+}
